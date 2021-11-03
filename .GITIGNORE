@@ -1,3 +1,4 @@
+*.env
 *.m
 data/*
 umap*

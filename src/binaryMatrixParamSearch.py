@@ -67,7 +67,7 @@ if __name__ == "__main__":
         loss /= len(valid_dataloader)
         print("validation loss for N_binary={}, N_combinations={} = {:.6f}".format(
             N_b, N_c, loss))
-        losses.append([N_b, N_c, loss])
+        losses.append([N_b, N_c, "{:.6f}".format(loss)])
 
     pd.DataFrame(losses, columns=['N_binary', 'N_combinations', 'valid_loss']).to_csv(
         DATA_DIR + "binaryMatrixParamSearchResults.csv")
