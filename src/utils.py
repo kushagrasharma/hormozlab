@@ -9,7 +9,6 @@ import math
 import numpy as np
 from sklearn.neighbors import kneighbors_graph
 from tqdm import tqdm
-import torch
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -18,6 +17,10 @@ MODELS_DIR = os.environ.get("MODELS_DIR")
 
 
 np.random.seed(42)
+
+"""
+Graph, Laplacian Helper Functions
+"""
 
 
 def check_symmetric(a, rtol=1e-05, atol=1e-05):
@@ -101,8 +104,6 @@ def laplacian_coefficients_to_probability(coefficients, laplacian_v):
     function /= sum(function)
     return function
 
-# This needs some testing to verify the output is correct
-
 
 def laplacian_on_weighted_matrix(matrix):
     L = np.zeros(matrix.shape)
@@ -143,7 +144,7 @@ def generate_binary_matrix(N_genes, N_binary, N_combinations=10):
 
 
 """
-Distance Metrics in Transcriptome Space
+Distance Metrics / Loss Functions
 """
 
 
@@ -168,6 +169,11 @@ def cross_entropy_on_matrix(Y, Yhat):
     return loss.mean()
 
 
+"""
+Gaussian Helper Functions
+"""
+
+
 def gaussian_centered_on_vertex(data, vertex, sigma=1, distance_metric=euclidean_distance):
     # $p\propto \exp(\frac{-x^2}{\sigma^2})$ where $x$ is the distance from the vertex
     p = np.zeros(data.shape[0])
@@ -176,6 +182,12 @@ def gaussian_centered_on_vertex(data, vertex, sigma=1, distance_metric=euclidean
         p[i] = math.exp(-1 * distance * (1/(sigma ** 2)))
     p /= sum(p)
     return p
+
+
+
+"""
+Model Functions
+"""
 
 
 def train_model(model, train_dataloader, device, N_features=9781, labelled=True, epochs=20):
@@ -214,6 +226,3 @@ def one_at(len_vec, one_idx):
     v = np.zeros(len_vec)
     v[one_idx] = 1
     return v
-
-
-
