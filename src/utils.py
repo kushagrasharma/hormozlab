@@ -1,5 +1,4 @@
 from torch.optim.lr_scheduler import ExponentialLR
-from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.nn as nn
@@ -81,7 +80,7 @@ def get_coefficients_in_basis(vec, basis):
     return output_vec
 
 
-def graph_to_tome_space(data, distribution_vec, weighted=False):
+def graph_to_tome_space(data, distribution_vec, weighted=True):
     # Takes in data::ndarray (NxN) which is the Tome data, and distribution_vec::ndarray (Nx1) which is a reconstruction of
     # an indicator function over the graph
     ## Returns (max_tome, weighted_avg_tome)

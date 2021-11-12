@@ -17,7 +17,7 @@ def binary_search_for_sigma(i, train_full, min_N, max_sigma):
     sigma = float(max_sigma) / 2.0
     gaussian = gaussian_centered_on_vertex(train_full, v_i, sigma=sigma)
     N = N_p_i(gaussian)
-
+    
 
 if __name__ == "__main__":
     train_full = pd.read_csv(

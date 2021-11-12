@@ -12,7 +12,8 @@ np.random.seed(42)
 
 
 def precompute_gaussian_sigma(train_full, sigma=5):
-    gaussian_filepath = DATA_DIR + 'precomputed_gaussian_sigma_{}.npy'.format(sigma)
+    gaussian_filepath = DATA_DIR + \
+        'precomputed_gaussian_sigma_{}.npy'.format(sigma)
     if not os.path.exists(gaussian_filepath):
         precomputed_gaussian = np.apply_along_axis(
             lambda x: gaussian_centered_on_vertex(train_full, x, sigma=5), 1, train_full)
@@ -20,11 +21,8 @@ def precompute_gaussian_sigma(train_full, sigma=5):
         np.save(gaussian_filepath, precomputed_gaussian)
 
 
-def precompute_closest_cell_to_validation_set(train_full, valid_full):
-    closest_cell_path = DATA_DIR + 'closest_cell_to_valid.npy'
-    if os.path.exists(closest_cell_path):
-        closest_cell_to_valid = np.load(closest_cell_path)
-    else:
+def precompute_closest_cell_to_set(train_full, valid_full, closest_cell_path):
+    if not os.path.exists(closest_cell_path):
         closest_cell_to_valid = np.ones((len(valid_full), 2)) * -1
 
         for i in range(len(valid_full)):
@@ -54,12 +52,12 @@ def precompute_gaussian_sigma_kthNN(train_full, k=10):
 
         np.save(gaussian_filepath, gaussian)
 
-        truncated_idxs = np.argsort(-gaussian, axis=1)[:,11:]
+        truncated_idxs = np.argsort(-gaussian, axis=1)[:, 11:]
         truncated_gaussian = np.copy(gaussian)
 
         for i in range(len(gaussian)):
-            truncated_gaussian[i,:][truncated_idxs[i,:]] = 0 
-            truncated_gaussian[i,:] /= truncated_gaussian[i,:].sum()
+            truncated_gaussian[i, :][truncated_idxs[i, :]] = 0
+            truncated_gaussian[i, :] /= truncated_gaussian[i, :].sum()
 
         np.save(truncated_gaussian_filepath, truncated_gaussian)
 
@@ -67,7 +65,16 @@ def precompute_gaussian_sigma_kthNN(train_full, k=10):
 def truncate_gaussian(k=10):
     gaussian_filepath = DATA_DIR + \
         'precomputed_gaussian_sigma_{}thNN.npy'.format(k)
-    gaussian = np.load(gaussian_filepath)
+    truncated_filepath = DATA_DIR + \
+        'truncated_gaussian_sigma_{}thNN.npy'.format(k)
+    if not os.path.exists(truncated_filepath):
+        gaussian_sigma_2sd = np.load(gaussian_filepath)
+        truncated_idxs = np.argsort(-gaussian_sigma_2sd, axis=1)[:,k+1:]
+        truncated_gaussian = np.copy(gaussian_sigma_2sd)
+        for i in range(len(gaussian_sigma_2sd)):
+            truncated_gaussian[i,:][truncated_idxs[i,:]] = 0 
+            truncated_gaussian[i,:] /= truncated_gaussian[i,:].sum()
+        np.save(truncated_filepath, truncated_gaussian)
 
 
 if __name__ == "__main__":
@@ -77,8 +84,15 @@ if __name__ == "__main__":
     valid_full = pd.read_csv(
         DATA_DIR + 'scvi_valid_set_gapdh.csv', header=None).to_numpy()
 
-    precompute_gaussian_sigma(train_full)
-    precompute_gaussian_sigma(train_full, sigma=100)
-    precompute_closest_cell_to_validation_set(train_full, valid_full)
-    precompute_gaussian_sigma_kthNN(train_full)
-    precompute_gaussian_sigma_kthNN(train_full, 5)
+    test_full = pd.read_csv(
+        DATA_DIR + 'scvi_test_set_gapdh.csv', header=None).to_numpy()
+
+    # precompute_gaussian_sigma(train_full)
+    # precompute_gaussian_sigma(train_full, sigma=100)
+    # precompute_closest_cell_to_set(
+    #     train_full, valid_full, DATA_DIR + 'closest_cell_to_valid.npy')
+    precompute_closest_cell_to_set(
+        train_full, test_full, DATA_DIR + 'closest_cell_to_test.npy')
+    # precompute_gaussian_sigma_kthNN(train_full)
+    # precompute_gaussian_sigma_kthNN(train_full, 5)
+    truncate_gaussian()
