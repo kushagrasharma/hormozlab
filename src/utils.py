@@ -2,8 +2,10 @@ from torch.optim.lr_scheduler import ExponentialLR
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.nn as nn
+import torch
 import os
 import math
+from copy import deepcopy
 
 import numpy as np
 from sklearn.neighbors import kneighbors_graph
@@ -95,11 +97,11 @@ def graph_to_tome_space(data, distribution_vec, weighted=True):
     return v
 
 
-def laplacian_coefficients_to_probability(coefficients, laplacian_v):
+def laplacian_coefficients_to_probability(coefficients, laplacian_v, norm_fn=lambda x: x ** 2):
     function = np.zeros(laplacian_v.shape[0])
     for i in range(len(coefficients)):
         function += coefficients[i] * laplacian_v[:, i]
-    function = np.exp(function)
+    function = norm_fn(function)
     function /= sum(function)
     return function
 
@@ -183,16 +185,41 @@ def gaussian_centered_on_vertex(data, vertex, sigma=1, distance_metric=euclidean
     return p
 
 
-
 """
 Model Functions
 """
 
 
-def train_model(model, train_dataloader, device, N_features=9781, labelled=True, epochs=20):
-    optimizer = optim.Adam(model.parameters(), lr=1e-4)
+def get_validation_loss(model, valid_dataloader, device, N_features=10, criterion=nn.MSELoss(), labelled=True):
+    loss = 0
+    if labelled:
+        for batch_features, batch_labels in valid_dataloader:
+            batch_features = batch_features.view(-1,
+                                                 N_features).to(device)
+            outputs = model(batch_features)
+            valid_loss = criterion(outputs, batch_labels)
+            loss += valid_loss.item()
+    else:
+        for _, batch_features in enumerate(valid_dataloader):
+            batch_features = batch_features.view(-1,
+                                                 N_features).to(device)
+            outputs = model(batch_features)
+            valid_loss = criterion(outputs, batch_features)
+            loss += valid_loss.item()
+
+    loss /= len(valid_dataloader)
+    return loss
+
+
+def train_model(model, train_dataloader, device, valid_dataloader=None, N_features=9781, labelled=True, epochs=20, criterion=nn.MSELoss(), patience=4):
+    optimizer = optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)
     scheduler = ExponentialLR(optimizer, gamma=0.8)
-    criterion = nn.MSELoss()
+    train_losses = []
+    valid_losses = []
+
+    valid_loss_nondecreasing_epochs = 0
+    best_valid_loss = math.inf
+    best_model = None
 
     for epoch in tqdm(range(epochs)):
         loss = 0
@@ -216,8 +243,33 @@ def train_model(model, train_dataloader, device, N_features=9781, labelled=True,
                 loss += train_loss.item()
         scheduler.step()
         loss = loss / len(train_dataloader)
-        print("epoch : {}/{}, loss = {:.6f}".format(epoch + 1, epochs, loss))
+        train_losses.append(loss)
+        if valid_dataloader:
+            valid_loss = get_validation_loss(
+                model, valid_dataloader, device, N_features=N_features, criterion=criterion, labelled=labelled)
+            valid_losses.append(valid_loss)
 
+            print("epoch : {}/{}, train loss = {:.6f}, valid loss = {:.6f}".format(
+                epoch + 1, epochs, loss, valid_loss))
+
+            if valid_loss < best_valid_loss:
+                best_valid_loss = valid_loss
+                best_model = deepcopy(model)
+
+            if epoch > 0:
+                if valid_loss >= valid_losses[-2]:
+                    valid_loss_nondecreasing_epochs += 1
+                else:
+                    valid_loss_nondecreasing_epochs = 0
+                if valid_loss_nondecreasing_epochs > patience:
+                    print("EARLY STOP, NONDECREASING VALID LOSS")
+                    break
+        else:
+            print("epoch : {}/{}, train loss = {:.6f}".format(epoch + 1, epochs, loss))
+
+    if best_model:
+        print("Returning best model with validation loss {}".format(best_valid_loss))
+        return best_model
     return model
 
 
@@ -225,3 +277,28 @@ def one_at(len_vec, one_idx):
     v = np.zeros(len_vec)
     v[one_idx] = 1
     return v
+
+
+def normalize(X):
+    if torch.is_tensor(X):
+        X = X.detach().numpy()
+    row_sums = X.sum(axis=1)
+    zero_indexes = np.argwhere(row_sums == 0)
+    for i in zero_indexes:
+        X[i, :] = np.ones(len(X[i, :]))
+    row_sums = X.sum(axis=1)
+    X = X / row_sums[:, np.newaxis]
+    return X
+
+
+def transform(X, transforms):
+    d = torch.clone(X)
+    for transform in transforms:
+        d = transform(d)
+    return d
+
+
+def transform_and_compute_error(X, Y, transforms, error):
+    # Returns the final reconstruction and the error
+    d = transform(X, transforms)
+    return d, error(Y, d)
