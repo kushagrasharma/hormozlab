@@ -73,7 +73,7 @@ if __name__ == "__main__":
         bottleneckedEncoder, train_dataloader, device, 9781)
     binaryEncoder = train_model(binaryEncoder, binary_train_dataloader, device, 10)
 
-    torch.save(encoder, MODELS_DIR + 'tomeToLaplacianEncoder.pt')
+    torch.save(encoder, MODELS_DIR + 'tomeToLaplacian.pt')
     torch.save(bottleneckedEncoder, MODELS_DIR +
-               'tomeToLaplacianBottleneckedEncoder.pt')
-    torch.save(binaryEncoder, MODELS_DIR + 'binaryToLaplacianEncoder.pt')
+               'tomeToLaplacianBottlenecked.pt')
+    torch.save(binaryEncoder, MODELS_DIR + 'binaryToLaplacian.pt')

@@ -257,7 +257,7 @@ def train_model(model, train_dataloader, device, valid_dataloader=None, N_featur
                 best_model = deepcopy(model)
 
             if epoch > 0:
-                if valid_loss >= valid_losses[-2]:
+                if valid_loss >= valid_losses[-2]-1e-6:
                     valid_loss_nondecreasing_epochs += 1
                 else:
                     valid_loss_nondecreasing_epochs = 0
@@ -302,3 +302,16 @@ def transform_and_compute_error(X, Y, transforms, error):
     # Returns the final reconstruction and the error
     d = transform(X, transforms)
     return d, error(Y, d)
+
+
+def load_binary_matrix(N_genes=9781, N_binary=50, N_combinations=10):
+    binary_matrix_filepath = MODELS_DIR + 'binary_matrix.npy'
+
+    if os.path.exists(binary_matrix_filepath):
+        binary_matrix = np.load(binary_matrix_filepath)
+    else:
+        binary_matrix = generate_binary_matrix(
+            N_genes, N_binary, N_combinations)
+        np.save(binary_matrix_filepath, binary_matrix)
+
+    return binary_matrix
