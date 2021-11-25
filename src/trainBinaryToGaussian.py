@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ExponentialLR
 
 from BinaryToGaussianNN import BinaryToGaussianNN
-from utils import generate_binary_matrix, train_model
+from utils import generate_binary_matrix, load_binary_matrix, train_model
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -57,14 +57,7 @@ if __name__ == "__main__":
     N_binary = 50  # The number of genes in our binary combination
     N_combinations = 10
 
-    binary_matrix_filepath = MODELS_DIR + 'binary_matrix.npy'
-
-    if exists(binary_matrix_filepath):
-        binary_matrix = np.load(binary_matrix_filepath)
-    else:
-        binary_matrix = generate_binary_matrix(
-            N_genes, N_binary, N_combinations)
-        np.save(binary_matrix_filepath, binary_matrix)
+    binary_matrix = load_binary_matrix()
 
     valid_full = pd.read_csv(
         DATA_DIR + 'scvi_valid_set_gapdh.csv', header=None).to_numpy()

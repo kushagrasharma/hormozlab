@@ -81,18 +81,23 @@ if __name__ == "__main__":
     train_full = pd.read_csv(
         DATA_DIR + 'scvi_train_set_gapdh.csv', header=None).to_numpy()
 
-    valid_full = pd.read_csv(
-        DATA_DIR + 'scvi_valid_set_gapdh.csv', header=None).to_numpy()
+    # valid_full = pd.read_csv(
+    #     DATA_DIR + 'scvi_valid_set_gapdh.csv', header=None).to_numpy()
 
-    test_full = pd.read_csv(
-        DATA_DIR + 'scvi_test_set_gapdh.csv', header=None).to_numpy()
+    # test_full = pd.read_csv(
+    #     DATA_DIR + 'scvi_test_set_gapdh.csv', header=None).to_numpy()
+
+    saver_test_full = pd.read_csv(
+        DATA_DIR + 'saver_test_set_gapdh.csv', header=None).to_numpy()
 
     # precompute_gaussian_sigma(train_full)
     # precompute_gaussian_sigma(train_full, sigma=100)
     # precompute_closest_cell_to_set(
     #     train_full, valid_full, DATA_DIR + 'closest_cell_to_valid.npy')
+    # precompute_closest_cell_to_set(
+    #     train_full, test_full, DATA_DIR + 'closest_cell_to_test.npy')
     precompute_closest_cell_to_set(
-        train_full, test_full, DATA_DIR + 'closest_cell_to_test.npy')
+        train_full, saver_test_full, DATA_DIR + 'closest_cell_to_saver_test_gapdh.npy')
     # precompute_gaussian_sigma_kthNN(train_full)
     # precompute_gaussian_sigma_kthNN(train_full, 5)
-    truncate_gaussian()
+    # truncate_gaussian()

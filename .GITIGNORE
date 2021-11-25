@@ -1,3 +1,4 @@
+figures/*
 src/__pycache__/
 src/models/*
 .ipynb_checkpoints/*

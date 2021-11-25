@@ -305,7 +305,7 @@ def transform_and_compute_error(X, Y, transforms, error):
 
 
 def load_binary_matrix(N_genes=9781, N_binary=50, N_combinations=10):
-    binary_matrix_filepath = MODELS_DIR + 'binary_matrix.npy'
+    binary_matrix_filepath = DATA_DIR + 'binary_matrix.npy'
 
     if os.path.exists(binary_matrix_filepath):
         binary_matrix = np.load(binary_matrix_filepath)
