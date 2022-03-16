@@ -2,6 +2,7 @@ import os
 from os.path import exists
 
 import numpy as np
+from numpy.lib.npyio import load
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
@@ -14,7 +15,7 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ExponentialLR
 
 from Binary2TomeNoBottleneckNN import Binary2TomeNoBottleneckNN
-from utils import generate_binary_matrix, train_model
+from utils import load_binary_matrix, load_constrained_binary_matrix, train_model
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -39,7 +40,7 @@ def train_binary_to_tome_with_matrix(binary_matrix, train_full, N_combinations=1
 
     model = Binary2TomeNoBottleneckNN(N_combinations=N_combinations).to(device)
     model = train_model(model, train_dataloader, device,
-                        N_combinations, labelled=True)
+                        N_features=N_combinations, labelled=True)
 
     return model
 
@@ -53,14 +54,11 @@ if __name__ == "__main__":
     N_binary = 50  # The number of genes in our binary combination
     N_combinations = 10
 
-    binary_matrix_filepath = MODELS_DIR + 'binary_matrix.npy'
-
-    if exists(binary_matrix_filepath):
-        binary_matrix = np.load(binary_matrix_filepath)
-    else:
-        binary_matrix = generate_binary_matrix(
-            N_genes, N_binary, N_combinations)
-        np.save(binary_matrix_filepath, binary_matrix)
+    binary_matrix = load_binary_matrix()
+    constrained_binary_matrix = load_constrained_binary_matrix()
 
     model = train_binary_to_tome_with_matrix(binary_matrix, train_full)
+    constrained_model = train_binary_to_tome_with_matrix(constrained_binary_matrix, train_full)
+
     torch.save(model, MODELS_DIR + 'binaryToTomeNoBottleneck.pt')
+    torch.save(model, MODELS_DIR + 'binaryToTomeNoBottleneck_constrained.pt')

@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from AutoEncoder import Encoder
 from BottleneckedEncoder import BottleneckedEncoder
 from Binary2LatentNN import Binary2LatentNN
-from utils import load_binary_matrix, get_laplacian_from_tome_data, get_laplacian_eig_from_laplacian, get_laplacian_coefficients, train_model
+from utils import train_model
 
 from dotenv import load_dotenv
 load_dotenv()

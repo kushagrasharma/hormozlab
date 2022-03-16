@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import ExponentialLR
 
 from BinaryToGaussianNN import BinaryToGaussianNN
-from utils import generate_binary_matrix, load_binary_matrix, train_model
+from utils import load_constrained_binary_matrix, load_binary_matrix, train_model
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -58,25 +58,38 @@ if __name__ == "__main__":
     N_combinations = 10
 
     binary_matrix = load_binary_matrix()
+    constrained_binary_matrix = load_constrained_binary_matrix()
 
     valid_full = pd.read_csv(
         DATA_DIR + 'scvi_valid_set_gapdh.csv', header=None).to_numpy()
 
-    binary_train_labels = torch.tensor(
+    binary_valid_labels = torch.tensor(
         np.load(DATA_DIR + 'gaussian_valid.npy')).float()
 
     binary_valid_features = torch.tensor(
         np.matmul(valid_full, binary_matrix)).float()
 
+    constrained_binary_valid_features = torch.tensor(
+        np.matmul(valid_full, constrained_binary_matrix)).float()
+
     binary_valid = []
+    constrained_binary_valid = []
 
     for i in range(binary_valid_features.shape[0]):
-        binary_valid.append([binary_valid_features[i], binary_train_labels[i]])
+        binary_valid.append([binary_valid_features[i], binary_valid_labels[i]])
+        constrained_binary_valid.append(
+            [binary_valid_features[i], binary_valid_labels[i]])
 
     valid_dataloader = DataLoader(binary_valid,
                                   batch_size=64, shuffle=True, num_workers=4, pin_memory=True)
+    constrained_valid_dataloader = DataLoader(constrained_binary_valid,
+                                              batch_size=64, shuffle=True, num_workers=4, pin_memory=True)
 
     model = train_binary_to_gaussian_with_matrix(
         binary_matrix, train_full, valid_dataloader)
+
+    constrained_model = train_binary_to_gaussian_with_matrix(
+        constrained_binary_matrix, train_full, constrained_valid_dataloader)
+
     torch.save(model, MODELS_DIR + 'binaryToGaussian.pt')
-    # model = torch.load(MODELS_DIR + 'binaryToGaussian.pt')
+    torch.save(model, MODELS_DIR + 'binaryToGaussian_constrained.pt')
