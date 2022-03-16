@@ -8,6 +8,7 @@ import math
 from copy import deepcopy
 
 import numpy as np
+import pandas as pd
 from sklearn.neighbors import kneighbors_graph
 from tqdm import tqdm
 
@@ -143,6 +144,33 @@ def generate_binary_matrix(N_genes, N_binary, N_combinations=10):
     binary_matrix = np.array(binary_matrix).T
     return binary_matrix
 
+def generate_constrained_binary_matrix(N_genes, N_combinations=10):
+    genes = pd.read_csv(DATA_DIR + 'scvi_train_set_gapdh.csv', header=None).to_numpy()
+    variance_by_gene = np.var(genes, axis=0)
+    top_1000_variance_genes = np.argsort(variance_by_gene)[-1000:]
+
+    N_combinations = 10
+    N_genes = 9781
+    combinations = []
+    constrained_binary_matrix = np.zeros((N_genes, N_combinations))
+
+    while len(combinations) < N_combinations:
+        np.random.shuffle(top_1000_variance_genes)
+        combination = []
+        i = 0
+        expr_sum = genes[:,top_1000_variance_genes[i]]
+        while expr_sum.max() <= 2:
+            combination.append(top_1000_variance_genes[i])
+            i += 1
+            expr_sum += genes[:,top_1000_variance_genes[i]]
+        if combination:
+            combinations.append(combination)
+            
+    for i, combination in enumerate(combinations):
+        for gene in combination:
+            constrained_binary_matrix[gene, i] = 1
+
+    return constrained_binary_matrix
 
 """
 Distance Metrics / Loss Functions
@@ -312,6 +340,18 @@ def load_binary_matrix(N_genes=9781, N_binary=50, N_combinations=10):
     else:
         binary_matrix = generate_binary_matrix(
             N_genes, N_binary, N_combinations)
+        np.save(binary_matrix_filepath, binary_matrix)
+
+    return binary_matrix
+
+def load_constrained_binary_matrix(N_genes=9781, N_combinations=10):
+    binary_matrix_filepath = DATA_DIR + 'constrained_binary_matrix.npy'
+
+    if os.path.exists(binary_matrix_filepath):
+        binary_matrix = np.load(binary_matrix_filepath)
+    else:
+        binary_matrix = generate_constrained_binary_matrix(
+            N_genes, N_combinations)
         np.save(binary_matrix_filepath, binary_matrix)
 
     return binary_matrix
